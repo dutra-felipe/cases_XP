@@ -1,0 +1,39 @@
+# Arquivos de Ambiente e Credenciais
+backend/.env
+.env
+
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+ENV/
+
+# Arquivos de Cache e Compilados do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pasta de Instância do Flask
+instance/
+
+# Arquivos de IDE e Editores de Código
+.vscode/
+.idea/
+
+# Relatórios de Testes e Cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Arquivos de Log
+*.log
+*.log.*
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de Banco de Dados Local
+*.sqlite3
+*.db

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cases Práticos{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-dark: #0d0e10;
+      --primary-gold: #ffcc00;
+      --gold-hover: #e6b800;
+      --text-light: #f8f9fa;
+      --text-muted: #adb5bd;
+      --card-bg: #1a1d23;
+      --border-color: #343a40;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #1a1d23 100%);
+      color: var(--text-light);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255, 204, 0, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 204, 0, 0.03) 0%, transparent 50%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .navbar {
+      background: linear-gradient(90deg, var(--primary-dark) 0%, #1a1d23 100%) !important;
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid var(--primary-gold);
+      box-shadow: 0 2px 20px rgba(255, 204, 0, 0.1);
+      padding: 1rem 0;
+    }
+
+    .navbar-brand {
+      transition: all 0.3s ease;
+    }
+
+    .navbar-brand:hover {
+      transform: scale(1.05);
+    }
+
+    .navbar-brand img {
+      height: 60px;
+      filter: brightness(1.2);
+      transition: filter 0.3s ease;
+    }
+
+    .navbar-brand:hover img {
+      filter: brightness(1.4) drop-shadow(0 0 10px rgba(255, 204, 0, 0.3));
+    }
+
+    .btn-outline-light {
+      border: 2px solid var(--primary-gold);
+      color: var(--primary-gold);
+      background: transparent;
+      font-weight: 600;
+      padding: 0.5rem 1.5rem;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-outline-light::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-outline-light:hover::before {
+      left: 100%;
+    }
+
+    .btn-outline-light:hover {
+      background: var(--primary-gold);
+      color: var(--primary-dark);
+      border-color: var(--primary-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
+    }
+
+    .btn-outline-light:focus {
+      box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25);
+    }
+
+    main {
+      min-height: calc(100vh - 200px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 1200px;
+    }
+
+    .content-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 15px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pagination .page-item .page-link {
+      color: var(--primary-gold);
+      background-color: transparent;
+      border: 1px solid var(--primary-gold);
+      transition: all 0.3s ease;
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: var(--primary-gold);
+      color: var(--primary-dark);
+      border-color: var(--primary-gold);
+      font-weight: bold;
+    }
+
+    .pagination .page-item .page-link:hover {
+      background-color: var(--gold-hover);
+      color: var(--primary-dark);
+      border-color: var(--gold-hover);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      background: linear-gradient(45deg, var(--primary-gold), var(--gold-hover));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--primary-gold);
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .navbar-brand img {
+        height: 32px;
+      }
+      
+      .btn-outline-light {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+      }
+      
+      main {
+        padding: 1rem 0;
+      }
+      
+      .content-card {
+        padding: 1.5rem;
+      }
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    ::selection {
+      background: var(--primary-gold);
+      color: var(--primary-dark);
+    }
+
+    *:focus {
+      outline: 2px solid var(--primary-gold);
+      outline-offset: 2px;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+        <img src="{{ url_for('static', filename='images/xp-investimentos.png') }}" alt="Cases Práticos">
+      </a>
+      <div class="d-flex">
+        <a id="panel-btn" class="btn btn-outline-light me-2 d-none" href="/admin">
+          <i class="fas fa-chart-line me-1"></i>
+          Painel
+        </a>
+        <a id="admin-btn" class="btn btn-outline-light me-2" href="/login">
+          <i class="fas fa-user me-1"></i>
+          Admin
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4 fade-in">
+    {% block content %}
+    <div class="content-card">
+      <h1><i class="fas fa-briefcase me-2"></i>Cases Práticos</h1>
+      <p class="lead text-muted">Explore nossos casos práticos e soluções inovadoras.</p>
+    </div>
+    {% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const adminBtn = document.getElementById('admin-btn');
+      const panelBtn = document.getElementById('panel-btn');
+
+      const updateAuthUI = (isAuthenticated) => {
+          if (isAuthenticated) {
+              if (adminBtn) {
+                  adminBtn.innerHTML = '<i class="fas fa-sign-out-alt me-1"></i>Logout';
+                  adminBtn.href = '#';
+                  adminBtn.replaceWith(adminBtn.cloneNode(true));
+                  document.getElementById('admin-btn').addEventListener('click', async (e) => {
+                      e.preventDefault();
+                      await fetch('/api/logout', { method: 'POST' });
+                      localStorage.removeItem('adminLoggedIn');
+                      window.location.href = '/';
+                  });
+              }
+              if (panelBtn) {
+                  panelBtn.classList.remove('d-none');
+              }
+          } else {
+              if (adminBtn) {
+                  adminBtn.innerHTML = '<i class="fas fa-user me-1"></i>Admin';
+                  adminBtn.href = '/login';
+              }
+              if (panelBtn) {
+                  panelBtn.classList.add('d-none');
+              }
+          }
+      };
+
+      fetch('/api/check-auth')
+          .then(res => res.json())
+          .then(data => {
+              localStorage.setItem('adminLoggedIn', data.authenticated);
+              updateAuthUI(data.authenticated);
+          })
+          .catch(() => {
+              updateAuthUI(false);
+          });
+
+      document.querySelectorAll('.btn-outline-light').forEach(btn => {
+          btn.addEventListener('mouseenter', function() {
+              this.style.transform = 'translateY(-2px)';
+          });
+          btn.addEventListener('mouseleave', function() {
+              this.style.transform = 'translateY(0)';
+          });
+      });
+
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+          anchor.addEventListener('click', function(e) {
+              e.preventDefault();
+              const target = document.querySelector(this.getAttribute('href'));
+              if (target) {
+                  target.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                  });
+              }
+          });
+      });
+  });
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

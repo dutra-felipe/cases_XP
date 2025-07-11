@@ -1,0 +1,221 @@
+{% extends "layout.html" %}
+
+{% block title %}Painel do Admin{% endblock %}
+
+{% block content %}
+<div class="content-card">
+
+  <div id="cases-list-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0"><i class="fas fa-chart-line me-2"></i>Painel de Administração</h2>
+      <button id="show-new-case-form-btn" class="btn btn-outline-light">
+        <i class="fas fa-plus me-1"></i> Novo Case
+      </button>
+    </div>
+    <div class="mb-3">
+      <input type="text" id="search-input" class="form-control" placeholder="Pesquisar por título...">
+    </div>
+    <div id="admin-cases-list">
+      </div>
+    <nav>
+      <ul class="pagination justify-content-center mt-3" id="pagination"></ul>
+    </nav>
+  </div>
+
+  <div id="case-form-section" style="display: none;">
+    <h2 id="form-title">Novo Case</h2>
+    <form id="case-form">
+      <input type="hidden" name="id">
+      <div class="mb-2"><input class="form-control" name="titulo" placeholder="Título" required></div>
+      <div class="mb-2"><textarea class="form-control" name="contextualizacao" placeholder="Contextualização" rows="3" required></textarea></div>
+      <div class="mb-2"><textarea class="form-control" name="diagnostico" placeholder="Diagnóstico" rows="3" required></textarea></div>
+      <div class="mb-2"><textarea class="form-control" name="dores" placeholder="Dores do cliente (1 por linha)" rows="3" required></textarea></div>
+      <div class="mb-2"><textarea class="form-control" name="bullets" placeholder="Bullet Points (1 por linha)" rows="3" required></textarea></div>
+      <div class="mb-2"><textarea class="form-control" name="ferramentas" placeholder="Ferramentas (1 por linha, opcional)" rows="2"></textarea></div>
+      <div class="mb-2"><textarea class="form-control" name="comentarios" placeholder="Comentários (opcional)" rows="2"></textarea></div>
+      <div class="mt-3">
+        <button type="submit" class="btn btn-outline-light">Salvar</button>
+        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const listSection = document.getElementById('cases-list-section');
+    const formSection = document.getElementById('case-form-section');
+    const casesListContainer = document.getElementById('admin-cases-list');
+    const paginationContainer = document.getElementById('pagination');
+    const searchInput = document.getElementById('search-input');
+    const caseForm = document.getElementById('case-form');
+    const formTitle = document.getElementById('form-title');
+    const showNewCaseFormBtn = document.getElementById('show-new-case-form-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    let allCases = [];
+    const CASES_PER_PAGE = 8;
+
+    const showList = () => {
+      listSection.style.display = 'block';
+      formSection.style.display = 'none';
+    };
+
+    const showForm = () => {
+      listSection.style.display = 'none';
+      formSection.style.display = 'block';
+    };
+
+    const populateForm = (caseData = null) => {
+      caseForm.reset();
+      if (caseData) {
+        formTitle.textContent = 'Editar Case';
+        caseForm.id.value = caseData.id;
+        caseForm.titulo.value = caseData.titulo;
+        caseForm.contextualizacao.value = caseData.contextualizacao;
+        caseForm.diagnostico.value = caseData.diagnostico;
+        caseForm.dores.value = (caseData.dores_do_cliente || []).join('\n');
+        caseForm.bullets.value = (caseData.bullet_points || []).join('\n');
+        caseForm.ferramentas.value = (caseData.ferramentas || []).join('\n');
+        caseForm.comentarios.value = caseData.comentarios || '';
+      } else {
+        formTitle.textContent = 'Novo Case';
+        caseForm.id.value = '';
+      }
+      showForm();
+    };
+
+    const deleteCase = async (id) => {
+      if (confirm('Deseja realmente excluir este case?')) {
+        try {
+          const res = await fetch(`/api/cases/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            await loadCases();
+          } else {
+            alert('Erro ao deletar o case.');
+          }
+        } catch (error) {
+          console.error('Erro na requisição de delete:', error);
+          alert('Erro de conexão ao tentar deletar.');
+        }
+      }
+    };
+
+    const renderCases = (casesToRender, page = 1) => {
+        casesListContainer.innerHTML = '';
+        const start = (page - 1) * CASES_PER_PAGE;
+        const end = start + CASES_PER_PAGE;
+        const pageCases = casesToRender.slice(start, end);
+
+        if (pageCases.length === 0) {
+            casesListContainer.innerHTML = '<p class="text-muted">Nenhum case encontrado.</p>';
+        }
+
+        pageCases.forEach(caseData => {
+            const card = document.createElement('div');
+            card.className = 'card mb-3 bg-dark text-light border border-secondary';
+            card.innerHTML = `
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">${caseData.titulo}</h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-light me-2 edit-btn"><i class="fas fa-edit"></i> Editar</button>
+                        <button class="btn btn-sm btn-danger delete-btn"><i class="fas fa-trash-alt"></i> Excluir</button>
+                    </div>
+                </div>
+            `;
+            card.querySelector('.edit-btn').addEventListener('click', () => populateForm(caseData));
+            card.querySelector('.delete-btn').addEventListener('click', () => deleteCase(caseData.id));
+            casesListContainer.appendChild(card);
+        });
+
+        renderPagination(casesToRender.length, page);
+    };
+
+    const renderPagination = (totalCases, currentPage) => {
+        paginationContainer.innerHTML = '';
+        const totalPages = Math.ceil(totalCases / CASES_PER_PAGE);
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            const link = document.createElement('a');
+            link.className = 'page-link';
+            link.href = '#';
+            link.textContent = i;
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const filtered = allCases.filter(c => c.titulo.toLowerCase().includes(searchTerm));
+                renderCases(filtered, i);
+            });
+            li.appendChild(link);
+            paginationContainer.appendChild(li);
+        }
+    };
+
+    const loadCases = async () => {
+      try {
+        const res = await fetch('/api/cases');
+        if (!res.ok) throw new Error('Falha na resposta da API');
+        allCases = await res.json();
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const filtered = allCases.filter(c => c.titulo.toLowerCase().includes(searchTerm));
+        renderCases(filtered, 1);
+        showList();
+      } catch (error) {
+        console.error('Erro ao carregar cases:', error);
+        casesListContainer.innerHTML = '<p class="text-danger">Não foi possível carregar os cases.</p>';
+      }
+    };
+    
+    showNewCaseFormBtn.addEventListener('click', () => populateForm(null));
+    cancelBtn.addEventListener('click', showList);
+
+    caseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(caseForm);
+      const id = formData.get('id');
+      const payload = {
+        titulo: formData.get('titulo'),
+        contextualizacao: formData.get('contextualizacao'),
+        diagnostico: formData.get('diagnostico'),
+        dores_do_cliente: formData.get('dores').split('\n'),
+        bullet_points: formData.get('bullets').split('\n'),
+        ferramentas: formData.get('ferramentas').split('\n'),
+        comentarios: formData.get('comentarios')
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/cases/${id}` : '/api/cases';
+
+      try {
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          await loadCases();
+        } else {
+          alert('Erro ao salvar o case.');
+        }
+      } catch (error) {
+        console.error('Erro na requisição de save:', error);
+        alert('Erro de conexão ao tentar salvar.');
+      }
+    });
+
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const filtered = allCases.filter(c => c.titulo.toLowerCase().includes(searchTerm));
+        renderCases(filtered, 1);
+    });
+
+    loadCases();
+  });
+</script>
+{% endblock %}

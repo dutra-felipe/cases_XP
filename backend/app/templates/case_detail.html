@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block title %}Detalhes do Case{% endblock %}
+{% block content %}
+<div id="case-detail" class="content-card"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const caseId = window.location.pathname.split("/").pop();
+    fetch(`/api/cases/${caseId}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Case não encontrado');
+        }
+        return res.json();
+      })
+      .then(data => {
+        const renderList = (items) => {
+          if (!items || items.length === 0) return '';
+          
+          return '<ul>' + items.map(item => {
+            if (item.trim()) {
+              return `<li>${item}</li>`;
+            } else {
+              return `<li style="list-style-type: none;">&nbsp;</li>`;
+            }
+          }).join('') + '</ul>';
+        };
+
+        document.getElementById("case-detail").innerHTML = `
+          <h2>${data.titulo}</h2>
+          <p><strong>Contextualização:</strong> ${data.contextualizacao}</p>
+          <p><strong>Diagnóstico:</strong> ${data.diagnostico}</p>
+          
+          <p><strong>Dores do cliente:</strong></p>
+          ${renderList(data.dores_do_cliente)}
+          
+          <p><strong>Bullet Points:</strong></p>
+          ${renderList(data.bullet_points)}
+          
+          ${data.ferramentas && data.ferramentas.length > 0 ? `
+            <p><strong>Ferramentas:</strong></p>
+            ${renderList(data.ferramentas)}
+          ` : ''}
+          
+          ${data.comentarios ? `<p class="mt-3"><strong>Comentários:</strong> ${data.comentarios}</p>` : ''}
+        `;
+      })
+      .catch(() => {
+        document.getElementById("case-detail").innerHTML = "<p>Erro ao carregar os dados do case.</p>";
+      });
+  });
+</script>
+{% endblock %}

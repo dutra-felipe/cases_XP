@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+
+{% block title %}Cases Práticos - Lista{% endblock %}
+
+{% block content %}
+<div class="content-card">
+  <h2 class="mb-4"><i class="fas fa-briefcase me-2"></i>Cases Práticos</h2>
+
+  <div class="mb-3">
+    <input type="text" id="search-input" class="form-control" placeholder="Pesquisar por título...">
+  </div>
+
+  <div id="cases-list" class="row row-cols-1 row-cols-md-2 g-4"></div>
+
+  <nav>
+    <ul class="pagination justify-content-center mt-4" id="pagination"></ul>
+  </nav>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const CASES_PER_PAGE = 8;
+    let allCases = [];
+    let filteredCases = [];
+    let currentPage = 1;
+
+    const container = document.getElementById("cases-list");
+    const pagination = document.getElementById("pagination");
+    const searchInput = document.getElementById("search-input");
+
+    function renderCases(cases, page) {
+      container.innerHTML = "";
+      const start = (page - 1) * CASES_PER_PAGE;
+      const end = start + CASES_PER_PAGE;
+      const pageCases = cases.slice(start, end);
+
+      if (pageCases.length === 0) {
+        container.innerHTML = "<p class='text-muted'>Nenhum case encontrado.</p>";
+        pagination.innerHTML = "";
+        return;
+      }
+
+      pageCases.forEach(caseData => {
+        const card = document.createElement("div");
+        card.className = "col";
+        card.innerHTML = `
+          <div class="card h-100 bg-dark text-light border border-secondary">
+            <div class="card-body">
+              <h5 class="card-title">${caseData.titulo}</h5>
+              <p class="card-text">${caseData.contextualizacao.slice(0, 150)}...</p>
+              <a href="/case/${caseData.id}" class="btn btn-outline-light">Ver detalhes</a>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      renderPagination(cases.length, page);
+    }
+
+    function renderPagination(totalCases, currentPage) {
+      const totalPages = Math.ceil(totalCases / CASES_PER_PAGE);
+      pagination.innerHTML = "";
+
+      for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement("li");
+        li.className = `page-item ${i === currentPage ? "active" : ""}`;
+        li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+        li.addEventListener("click", (e) => {
+          e.preventDefault();
+          renderCases(filteredCases, i);
+        });
+        pagination.appendChild(li);
+      }
+    }
+
+    function applySearchFilter() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      filteredCases = allCases.filter(c =>
+        c.titulo.toLowerCase().includes(searchTerm)
+      );
+      renderCases(filteredCases, 1);
+    }
+
+    fetch("/api/cases")
+      .then(res => res.json())
+      .then(data => {
+        allCases = data;
+        filteredCases = data;
+        renderCases(filteredCases, 1);
+      })
+      .catch(() => {
+        container.innerHTML = "<p class='text-danger'>Erro ao carregar os cases.</p>";
+      });
+
+    searchInput.addEventListener("input", () => {
+      currentPage = 1;
+      applySearchFilter();
+    });
+  });
+</script>
+{% endblock %}
