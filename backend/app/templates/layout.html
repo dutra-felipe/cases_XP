@@ -238,10 +238,19 @@
           <i class="fas fa-chart-line me-1"></i>
           Painel
         </a>
-        <a id="admin-btn" class="btn btn-outline-light me-2" href="/login">
-          <i class="fas fa-user me-1"></i>
-          Admin
-        </a>
+        {% if request.path == '/login' %}
+          <a id="admin-btn" class="btn btn-outline-light me-2" href="/user-login">
+            <i class="fas fa-user-circle me-1"></i> Usuário
+          </a>
+        {% elif request.path == '/user-login' %}
+          <a id="admin-btn" class="btn btn-outline-light me-2" href="/login">
+            <i class="fas fa-user-lock me-1"></i> Admin
+          </a>
+        {% else %}
+          <a id="admin-btn" class="btn btn-outline-light me-2" href="/login">
+            <i class="fas fa-user me-1"></i> Admin
+          </a>
+        {% endif %}
       </div>
     </div>
   </nav>
@@ -259,41 +268,36 @@
   
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-      const adminBtn = document.getElementById('admin-btn');
+      const authBtn = document.getElementById('admin-btn');
       const panelBtn = document.getElementById('panel-btn');
 
-      const updateAuthUI = (isAuthenticated) => {
+      const updateAuthUI = (isAuthenticated, userData = null) => {
           if (isAuthenticated) {
-              if (adminBtn) {
-                  adminBtn.innerHTML = '<i class="fas fa-sign-out-alt me-1"></i>Logout';
-                  adminBtn.href = '#';
-                  adminBtn.replaceWith(adminBtn.cloneNode(true));
-                  document.getElementById('admin-btn').addEventListener('click', async (e) => {
+              if (authBtn) {
+                  authBtn.innerHTML = '<i class="fas fa-sign-out-alt me-1"></i>Logout';
+                  authBtn.href = '#';
+                  const newAuthBtn = authBtn.cloneNode(true);
+                  authBtn.parentNode.replaceChild(newAuthBtn, authBtn);
+                  
+                  newAuthBtn.addEventListener('click', async (e) => {
                       e.preventDefault();
                       await fetch('/api/logout', { method: 'POST' });
-                      localStorage.removeItem('adminLoggedIn');
-                      window.location.href = '/';
+                      window.location.href = '/user-login';
                   });
               }
-              if (panelBtn) {
+              if (panelBtn && userData && userData.is_admin) {
                   panelBtn.classList.remove('d-none');
               }
           } else {
-              if (adminBtn) {
-                  adminBtn.innerHTML = '<i class="fas fa-user me-1"></i>Admin';
-                  adminBtn.href = '/login';
-              }
               if (panelBtn) {
                   panelBtn.classList.add('d-none');
               }
           }
       };
-
       fetch('/api/check-auth')
           .then(res => res.json())
           .then(data => {
-              localStorage.setItem('adminLoggedIn', data.authenticated);
-              updateAuthUI(data.authenticated);
+              updateAuthUI(data.authenticated, data.user);
           })
           .catch(() => {
               updateAuthUI(false);

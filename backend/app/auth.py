@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
 from .models import User, db
 from .config import Config
 
@@ -10,7 +11,7 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/api/login', methods=['POST'])
 def login():
-    """Endpoint para login do admin com verificação de hash"""
+    """Endpoint para login do admin com verificação de hash e permissão."""
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -18,24 +19,22 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username e password são obrigatórios'}), 400
 
-    # Tenta encontrar o usuário no banco de dados primeiro
     user = User.query.filter_by(username=username).first()
 
     if user:
-        # Se o usuário existe, compara a senha enviada com a senha hasheada no banco
         if check_password_hash(user.password, password):
-            login_user(user)
-            return jsonify({'message': 'Login realizado com sucesso'})
+            if user.is_admin:
+                login_user(user)
+                return jsonify({'message': 'Login realizado com sucesso'})
+            else:
+                return jsonify({'error': 'Acesso negado: este usuário não é um administrador'}), 403
         else:
-            # Senha incorreta para usuário existente
             return jsonify({'error': 'Credenciais inválidas'}), 401
     else:
-        # Se o usuário NÃO existe (primeiro login), verifica contra as variáveis de ambiente
         if username == Config.ADMIN_USERNAME and password == Config.ADMIN_PASSWORD:
-            # Cria o usuário no banco
             new_user = User(
                 username=username,
-                password=generate_password_hash(password), # Armazena a senha hasheada
+                password=generate_password_hash(password),
                 is_admin=True
             )
             db.session.add(new_user)
@@ -44,8 +43,41 @@ def login():
             login_user(new_user)
             return jsonify({'message': 'Login realizado com sucesso e usuário admin criado'})
         else:
-            # Usuário não existe e as credenciais do .env não batem
             return jsonify({'error': 'Credenciais inválidas'}), 401
+
+
+@auth_bp.route('/api/user-login', methods=['POST'])
+def user_login():
+    """Login de usuários comuns, criando um usuário persistente se não existir"""
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({'error': 'Username e password são obrigatórios'}), 400
+    
+    if username != Config.USER_USERNAME or password != Config.USER_PASSWORD:
+        return jsonify({'error': 'Credenciais inválidas'}), 401
+
+    user = User.query.filter_by(username=username).first()
+
+    if user:
+        if check_password_hash(user.password, password):
+            login_user(user)
+            return jsonify({'message': 'Login realizado com sucesso'})
+        else:
+            return jsonify({'error': 'Credenciais inválidas'}), 401
+    else:
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+            is_admin=False
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        
+        login_user(new_user)
+        return jsonify({'message': 'Login realizado com sucesso e usuário comum criado'})
 
 
 @auth_bp.route('/api/logout', methods=['POST'])
@@ -64,7 +96,21 @@ def check_auth():
             'authenticated': True,
             'user': {
                 'username': current_user.username,
-                'is_admin': current_user.is_admin
+                'is_admin': getattr(current_user, 'is_admin', False)
             }
         })
     return jsonify({'authenticated': False})
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Por favor, faça o login para acessar esta página.', 'warning')
+            return redirect(url_for('views.login_page')) 
+        
+        if not getattr(current_user, 'is_admin', False):
+            return jsonify({'error': 'Acesso negado: esta área é restrita a administradores'}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function

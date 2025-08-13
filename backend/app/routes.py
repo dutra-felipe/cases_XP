@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required
 from sqlalchemy import func
 from .models import Case, db
+from .auth import admin_required
 import json
 
 
@@ -23,7 +24,7 @@ def get_case(case_id):
 
 
 @api_bp.route('/api/cases', methods=['POST'])
-@login_required
+@admin_required
 def create_case():
     """Cria um novo case"""
     data = request.get_json()
@@ -58,7 +59,7 @@ def create_case():
 
 
 @api_bp.route('/api/cases/<int:case_id>', methods=['PUT'])
-@login_required
+@admin_required
 def update_case(case_id):
     """Atualiza um case existente"""
     case = Case.query.get_or_404(case_id)
@@ -92,7 +93,7 @@ def update_case(case_id):
 
 
 @api_bp.route('/api/cases/<int:case_id>', methods=['DELETE'])
-@login_required
+@admin_required
 def delete_case(case_id):
     """Deleta um case"""
     case = Case.query.get_or_404(case_id)

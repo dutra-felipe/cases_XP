@@ -11,6 +11,9 @@ class Config:
 
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD')
+
+    USER_USERNAME = os.environ.get('USER_USERNAME')
+    USER_PASSWORD = os.environ.get('USER_PASSWORD')
     
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
