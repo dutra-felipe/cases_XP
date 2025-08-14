@@ -24,7 +24,6 @@ def admin_page():
 
 
 @views_bp.route('/case/<int:case_id>')
-@admin_required
 def case_detail_page(case_id):
     return render_template('case_detail.html')
 
